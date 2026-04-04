@@ -1,33 +1,36 @@
 # backend/core/engine.py
 
 from backend.core.lexer import tokenize
-from backend.core.parser import parse   # your friend's module
+from backend.core.parser import Parser
 from backend.core.solver import solve
 from backend.core.constraints import apply_constraints
 
 
 def solve_equation(expression: str, constraints=None):
-    """
-    Full pipeline:
-    string → tokens → parsed → solved → filtered
-    """
-
     # 1. Lexer
     tokens = tokenize(expression)
+    print("TOKENS:", tokens)  # debug
 
-    # 2. Parser
-    parsed = parse(tokens)
+    # 2. Parser (FIXED)
+    parser = Parser(tokens)
+    parsed = parser.parse()
 
-    # Expected format:
-    # {
-    #     "coefficients": {"x": 10, "y": 20},
-    #     "target": 100
-    # }
+    print("PARSED OUTPUT:", parsed)  # debug
+    print("TYPE:", type(parsed))  # debug
+
+    # 🔥 SAFETY CHECK (IMPORTANT)
+    if not isinstance(parsed, dict):
+        raise Exception(f"Parser did not return valid equation: {parsed}")
 
     # 3. Solver
     solutions = solve(parsed)
 
-    # 4. Constraints (optional)
+    print("TOTAL SOLUTIONS:", len(solutions))
+
+    for s in solutions[:10]:  # only first 10
+        print(s)
+
+    # 4. Constraints
     if constraints:
         solutions = apply_constraints(solutions, constraints)
 

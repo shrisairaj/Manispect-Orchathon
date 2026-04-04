@@ -3,6 +3,13 @@
 # Optimized solver for linear Diophantine equations:
 # a1*x1 + a2*x2 + ... + an*xn = target
 # where all xi >= 0 (whole units)
+from math import gcd
+from functools import reduce
+
+
+def is_valid(coeffs, target):
+    g = reduce(gcd, coeffs.values())
+    return target % g == 0
 
 def solve(equation):
     """
@@ -15,6 +22,10 @@ def solve(equation):
     """
     coeffs = equation["coefficients"]
     target = equation["target"]
+
+    # 🔥 ADD THIS CHECK HERE
+    if not is_valid(coeffs, target):
+        return []
 
     # Basic validation
     if target < 0:
@@ -87,6 +98,7 @@ def _solve_two_var(coeffs, variables, target):
 # Multi-variable (Backtracking optimized)
 # -------------------------------
 def _solve_multi_var(coeffs, variables, target):
+    MAX_SOLUTIONS = 1000
     solutions = []
     append = solutions.append
 
@@ -94,6 +106,9 @@ def _solve_multi_var(coeffs, variables, target):
 
     def backtrack(index, current, remaining):
         # Last variable → compute directly
+        if len(solutions) >= MAX_SOLUTIONS:
+            return
+
         if index == n - 1:
             var = variables[index]
             coeff = coeffs[var]
@@ -120,6 +135,8 @@ def _solve_multi_var(coeffs, variables, target):
 
             current[var] = value
             backtrack(index + 1, current, new_remaining)
+
+
 
     backtrack(0, {}, target)
     return solutions
