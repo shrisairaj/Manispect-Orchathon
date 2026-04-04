@@ -1,5 +1,4 @@
 from core.parser import Parser
-
 tokens = [
     {"type": "NUMBER", "value": 10},
     {"type": "MUL"},
