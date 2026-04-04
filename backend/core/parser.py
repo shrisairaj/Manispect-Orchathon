@@ -1,5 +1,5 @@
-from backend.core.tree import Number, Variable, BinaryOp, Equation
-from backend.core.lexer import TokenType
+from core.lexer import TokenType
+from core.tree import BinaryOp, Equation, Number, Variable
 
 
 class Parser:
