@@ -1,7 +1,7 @@
 from core.engine import solve_equation
 
-expr = "10a+15b+20c+50d+5e=1000"
-constraints = ["a>=2"]
+expr = "10a + 5b = 20"
+constraints = ["a>=0"]
 
 result = solve_equation(expr, constraints)
 
