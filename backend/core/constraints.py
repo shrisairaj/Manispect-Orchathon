@@ -46,3 +46,30 @@ def apply_constraints(solutions, constraints):
             append(sol)
 
     return filtered
+
+
+def compile_bounds(constraints):
+    bounds = {}
+    if not constraints:
+        return bounds
+
+    parsed = [parse_constraint(c) for c in constraints]
+    for var, op_func, val in parsed:
+        if var not in bounds:
+            bounds[var] = {"min": 0, "max": float('inf'), "exclude": set()}
+
+        if op_func == operator.ge:  # var >= val
+            bounds[var]["min"] = max(bounds[var]["min"], val)
+        elif op_func == operator.gt:  # var > val
+            bounds[var]["min"] = max(bounds[var]["min"], val + 1)
+        elif op_func == operator.le:  # var <= val
+            bounds[var]["max"] = min(bounds[var]["max"], val)
+        elif op_func == operator.lt:  # var < val
+            bounds[var]["max"] = min(bounds[var]["max"], val - 1)
+        elif op_func == operator.eq:  # var == val
+            bounds[var]["min"] = max(bounds[var]["min"], val)
+            bounds[var]["max"] = min(bounds[var]["max"], val)
+        elif op_func == operator.ne:  # var != val
+            bounds[var]["exclude"].add(val)
+
+    return bounds

@@ -1,10 +1,15 @@
 from backend.core.engine import solve_equation
 
-expr = "10a+15b+20c+50d+5e=1000"
-constraints = ["a>=2"]
+expr = "50x"
+constraints = ["x=10"]
 
 result = solve_equation(expr, constraints)
 
-print("\nFINAL RESULT:")
-for r in result:
-    print(r)
+print("\nFINAL RESULT:\n")
+
+print("Total Solutions:", result["total_solutions"])
+print("Shown Solutions:", result["shown_solutions"])
+
+print("\nSolutions:")
+for sol in result["solutions"]:
+    print(sol)
