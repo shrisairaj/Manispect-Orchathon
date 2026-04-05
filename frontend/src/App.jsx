@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './App.css'
-import InputForm from './components/InputForm'
-import ResultPanel from './components/ResultPanel'
+import InputForm from './components/InputForm.jsx'
+import ResultPanel from './components/ResultPanel.jsx'
 
 function App() {
   const [results, setResults] = useState(null)
@@ -9,8 +9,13 @@ function App() {
 
   const handleSolve = async (expression, constraints) => {
     setLoading(true)
+    if (!expression || !expression.trim()) {
+      setResults({error: "Please enter an equation"})
+      setLoading(false)
+      return
+    }
     try {
-      const response = await fetch('http://localhost:5000/solve', {
+      const response = await fetch('http://localhost:9000/solve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

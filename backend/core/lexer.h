@@ -11,6 +11,10 @@ enum class TokenType {
     Variable,
     Plus,
     Minus,
+    Multiply,
+    Divide,
+    LeftParen,
+    RightParen,
     Equals,
     End,
     Invalid

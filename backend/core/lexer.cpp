@@ -49,6 +49,10 @@ Token Lexer::nextToken() {
     switch (current) {
         case '+': return Token(TokenType::Plus, "+", 0);
         case '-': return Token(TokenType::Minus, "-", 0);
+        case '*': return Token(TokenType::Multiply, "*", 0);
+        case '/': return Token(TokenType::Divide, "/", 0);
+        case '(': return Token(TokenType::LeftParen, "(", 0);
+        case ')': return Token(TokenType::RightParen, ")", 0);
         case '=': return Token(TokenType::Equals, "=", 0);
         default:
             throw std::invalid_argument("Invalid character in expression: " + std::string(1, current));

@@ -1,0 +1,209 @@
+#root {
+  width: 100vw;
+  margin: 0;
+  padding: 1rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: white;
+  box-sizing: border-box;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+h1 {
+  color: #ffffff;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.input-form {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 90vw;
+  max-width: min(90vw, 800px);
+  margin: 0 auto;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #555;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.constraint-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.constraint-row input {
+  flex: 1;
+}
+
+button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.result-panel {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 90vw;
+  max-width: min(90vw, 1000px);
+  margin: 0 auto;
+  color: #333;
+}
+
+.result-panel h2 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.result-panel p {
+  margin: 0.5rem 0;
+  color: #222;
+  font-weight: 500;
+}
+
+.solutions {
+  margin-top: 1rem;
+}
+
+.solutions h3 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.solution {
+  background: #f8f9fa;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  color: #222;
+  font-family: monospace;
+}
+
+.solution span {
+  color: #222;
+}
+
+.error {
+  color: #dc3545;
+  font-weight: bold;
+  background: #f8d7da;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #root {
+    padding: 1rem;
+  }
+
+  .input-form,
+  .result-panel {
+    padding: 1.5rem;
+    max-width: 95vw;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1439px) {
+  #root {
+    padding: 2rem 4rem;
+  }
+
+  .input-form,
+  .result-panel {
+    padding: 2.5rem;
+    max-width: 90vw;
+  }
+}
+
+@media (min-width: 1440px) {
+  #root {
+    padding: 2rem 5rem;
+  }
+
+  .input-form,
+  .result-panel {
+    width: 100%;
+    max-width: none;
+    padding: 3rem 4rem;
+  }
+
+  h1 {
+    font-size: 4.5rem;
+    padding: 2rem 4rem;
+  }
+
+  .App {
+    gap: 4rem;
+  }
+}
+
+

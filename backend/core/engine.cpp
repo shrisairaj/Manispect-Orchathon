@@ -22,6 +22,10 @@ EngineResult solve_equation(
     Solver solver;
     SolverResult solverResult = solver.solve(parseResult.coefficients, parseResult.target, displayLimit, validator);
 
+    if (solverResult.totalSolutions == 0) {
+        throw std::runtime_error("No whole number solutions exist.");
+    }
+
     EngineResult output;
     output.totalSolutions = solverResult.totalSolutions;
     output.shownSolutions = static_cast<int>(solverResult.solutions.size());

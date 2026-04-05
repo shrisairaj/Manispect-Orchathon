@@ -4,6 +4,7 @@
 #include "lexer.h"
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace quant {
 
@@ -12,18 +13,24 @@ struct ParseResult {
     int target = 0;
 };
 
+struct Expression {
+    std::unordered_map<std::string, int> coefficients;
+    int constant = 0;
+};
+
 class Parser {
 public:
     ParseResult parseEquation(const std::string &expression);
 
 private:
-    struct Side {
-        std::unordered_map<std::string, int> coefficients;
-        int constant = 0;
-    };
+    Expression parseExpression(const std::vector<Token> &tokens, size_t &index, size_t end);
+    Expression parseTerm(const std::vector<Token> &tokens, size_t &index, size_t end);
+    Expression parseFactor(const std::vector<Token> &tokens, size_t &index, size_t end);
 
-    Side parseSide(const std::vector<Token> &tokens, size_t start, size_t end);
-    void accumulateTerm(Side &side, const std::string &variable, int coefficient, int sign);
+    static Expression add(const Expression &lhs, const Expression &rhs);
+    static Expression subtract(const Expression &lhs, const Expression &rhs);
+    static Expression multiply(const Expression &lhs, const Expression &rhs);
+    static Expression divide(const Expression &lhs, const Expression &rhs);
 };
 
 } // namespace quant

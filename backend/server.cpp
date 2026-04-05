@@ -187,15 +187,40 @@ private:
     bool running_;
 
     void handle_client(SOCKET client_socket) {
-        char buffer[65536] = {0};
-        int bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+        char buffer[65536];
+        std::string request;
+        int bytes_received = 0;
+        size_t content_length = 0;
+        bool headers_parsed = false;
 
-        if (bytes_received <= 0) {
+        while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
+            request.append(buffer, bytes_received);
+            if (!headers_parsed) {
+                size_t header_end = request.find("\r\n\r\n");
+                if (header_end != std::string::npos) {
+                    headers_parsed = true;
+                    content_length = parse_content_length(request.substr(0, header_end));
+                }
+            }
+
+            size_t header_end = request.find("\r\n\r\n");
+            if (header_end != std::string::npos) {
+                size_t body_length = request.size() - (header_end + 4);
+                if (body_length >= content_length) {
+                    break;
+                }
+            }
+
+            if (!headers_parsed && request.size() > 65536) {
+                break;
+            }
+        }
+
+        if (request.empty()) {
             close(client_socket);
             return;
         }
 
-        std::string request(buffer, bytes_received);
         std::string method, path, http_version, body;
         parse_http_request(request, method, path, http_version, body);
 
@@ -215,6 +240,26 @@ private:
 
         send(client_socket, response.c_str(), response.length(), 0);
         close(client_socket);
+    }
+
+    int parse_content_length(const std::string& headers) {
+        std::string search = "Content-Length:";
+        size_t pos = headers.find(search);
+        if (pos == std::string::npos) {
+            return 0;
+        }
+        pos += search.length();
+        while (pos < headers.size() && (headers[pos] == ' ' || headers[pos] == '\t')) pos++;
+        size_t end = headers.find("\r\n", pos);
+        if (end == std::string::npos) {
+            end = headers.size();
+        }
+        std::string value = headers.substr(pos, end - pos);
+        try {
+            return std::stoi(value);
+        } catch (...) {
+            return 0;
+        }
     }
 
     std::string handle_solve_request(const std::string& body) {

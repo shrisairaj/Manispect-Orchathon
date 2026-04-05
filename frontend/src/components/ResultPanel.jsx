@@ -18,9 +18,7 @@ function ResultPanel({ results }) {
           <h3>Solutions:</h3>
           {results.solutions.map((solution, index) => (
             <div key={index} className="solution">
-              {Object.entries(solution).map(([variable, val]) => (
-                <span key={variable}>{variable}: {val}</span>
-              )).reduce((prev, curr) => [prev, ', ', curr])}
+              {Object.entries(solution).map(([variable, val]) => `${variable}: ${val}`).join(', ')}
             </div>
           ))}
         </div>
