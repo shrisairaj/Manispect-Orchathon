@@ -128,7 +128,7 @@ public:
 
 class HTTPServer {
 public:
-    HTTPServer(int port = 8123) : port_(port), running_(false) {}
+    HTTPServer(int port = 8080) : port_(port), running_(false) {}
 
     void start() {
 #ifdef _WIN32
@@ -317,7 +317,7 @@ private:
 };
 
 int main(int argc, char* argv[]) {
-    int port = 8123;
+    int port = 8080;
     if (argc > 1) {
         port = std::stoi(argv[1]);
     }
