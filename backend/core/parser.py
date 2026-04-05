@@ -95,62 +95,73 @@ class Parser:
     # Convert AST → coefficients
     # -------------------------
     def build_equation(self, eq):
-        coeffs = {}
-        target = self.evaluate(eq.right)
+        left_coeffs, left_const = self.eval_poly(eq.left)
+        right_coeffs, right_const = self.eval_poly(eq.right)
 
-        self.extract_terms(eq.left, coeffs)
+        # Move all variables to left, all constants to right
+        coeffs = {}
+        for k, v in left_coeffs.items():
+            coeffs[k] = coeffs.get(k, 0) + v
+        for k, v in right_coeffs.items():
+            coeffs[k] = coeffs.get(k, 0) - v
+
+        target = right_const - left_const
 
         return {
             "coefficients": coeffs,
             "target": target
         }
 
-    def extract_terms(self, node, coeffs):
-        # Case 1: Addition
-        if isinstance(node, BinaryOp) and node.op == TokenType.PLUS:
-            self.extract_terms(node.left, coeffs)
-            self.extract_terms(node.right, coeffs)
-
-        # Case 2: Subtraction
-        elif isinstance(node, BinaryOp) and node.op == TokenType.MINUS:
-            self.extract_terms(node.left, coeffs)
-
-            temp = {}
-            self.extract_terms(node.right, temp)
-
-            for k, v in temp.items():
-                coeffs[k] = coeffs.get(k, 0) - v
-
-        # Case 3: Multiplication (MOST IMPORTANT)
-        elif isinstance(node, BinaryOp) and node.op == TokenType.MUL:
-
-            # number * variable
-            if isinstance(node.left, Number) and isinstance(node.right, Variable):
-                coeffs[node.right.name] = coeffs.get(node.right.name, 0) + node.left.value
-
-            # variable * number
-            elif isinstance(node.right, Number) and isinstance(node.left, Variable):
-                coeffs[node.left.name] = coeffs.get(node.left.name, 0) + node.right.value
-
-        # Case 4: Single variable (like x → 1x)
-        elif isinstance(node, Variable):
-            coeffs[node.name] = coeffs.get(node.name, 0) + 1
-
-    def evaluate(self, node):
+    def eval_poly(self, node):
         if isinstance(node, Number):
-            return node.value
+            return {}, node.value
+
+        if isinstance(node, Variable):
+            return {node.name: 1}, 0
 
         if isinstance(node, BinaryOp):
-            left = self.evaluate(node.left)
-            right = self.evaluate(node.right)
+            l_coeffs, l_const = self.eval_poly(node.left)
+            r_coeffs, r_const = self.eval_poly(node.right)
 
             if node.op == TokenType.PLUS:
-                return left + right
-            if node.op == TokenType.MINUS:
-                return left - right
-            if node.op == TokenType.MUL:
-                return left * right
-            if node.op == TokenType.DIV:
-                return left // right
+                c = dict(l_coeffs)
+                for k, v in r_coeffs.items():
+                    c[k] = c.get(k, 0) + v
+                return c, l_const + r_const
 
-        raise Exception("Invalid expression")
+            if node.op == TokenType.MINUS:
+                c = dict(l_coeffs)
+                for k, v in r_coeffs.items():
+                    c[k] = c.get(k, 0) - v
+                return c, l_const - r_const
+
+            if node.op == TokenType.MUL:
+                if l_coeffs and r_coeffs:
+                    raise Exception("Non-linear equations (variable * variable) are not supported.")
+
+                c = {}
+                if l_coeffs:  # left has variables, so multiply them by right constant
+                    for k, v in l_coeffs.items():
+                        c[k] = v * r_const
+                    return c, l_const * r_const
+                else:  # right has variables, so multiply them by left constant
+                    for k, v in r_coeffs.items():
+                        c[k] = v * l_const
+                    return c, l_const * r_const
+
+            if node.op == TokenType.DIV:
+                if r_coeffs:
+                    raise Exception("Dividing by a variable in the equation is not supported.")
+                if r_const == 0:
+                    raise Exception("Division by zero.")
+
+                c = {}
+                for k, v in l_coeffs.items():
+                    if v % r_const != 0:
+                        raise Exception("Fractional coefficients are not supported.")
+                    c[k] = v // r_const
+                if l_const % r_const != 0:
+                    raise Exception("Fractional constants are not supported.")
+                return c, l_const // r_const
+
+        raise Exception(f"Unrecognized node in expression: {type(node)}")

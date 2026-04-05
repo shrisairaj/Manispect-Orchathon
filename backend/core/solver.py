@@ -11,7 +11,8 @@ def is_valid(coeffs, target):
     g = reduce(gcd, coeffs.values())
     return target % g == 0
 
-def solve(equation):
+
+def solve(equation, bounds=None):
     """
     Main entry point.
     Expects:
@@ -44,18 +45,18 @@ def solve(equation):
 
     # Choose optimized path
     if len(variables) == 1:
-        return _solve_one_var(coeffs, variables, target)
+        return _solve_one_var(coeffs, variables, target, bounds)
 
     if len(variables) == 2:
-        return _solve_two_var(coeffs, variables, target)
+        return _solve_two_var(coeffs, variables, target, bounds)
 
-    return _solve_multi_var(coeffs, variables, target)
+    return _solve_multi_var(coeffs, variables, target, bounds)
 
 
 # -------------------------------
 # 1 Variable (O(1))
 # -------------------------------
-def _solve_one_var(coeffs, variables, target):
+def _solve_one_var(coeffs, variables, target, bounds):
     var = variables[0]
     coeff = coeffs[var]
 
@@ -66,13 +67,18 @@ def _solve_one_var(coeffs, variables, target):
     if value < 0:
         return []
 
+    if bounds:
+        bv = bounds.get(var, {})
+        if value < bv.get("min", 0) or value > bv.get("max", float('inf')) or value in bv.get("exclude", set()):
+            return []
+
     return [{var: value}]
 
 
 # -------------------------------
 # 2 Variables (O(n))
 # -------------------------------
-def _solve_two_var(coeffs, variables, target):
+def _solve_two_var(coeffs, variables, target, bounds):
     v1, v2 = variables
     a = coeffs[v1]
     b = coeffs[v2]
@@ -83,12 +89,33 @@ def _solve_two_var(coeffs, variables, target):
     # iterate smaller range
     max_v1 = target // a
 
-    for x in range(max_v1 + 1):
+    min_x = 0
+    max_x = max_v1
+    min_y = 0
+    max_y = float('inf')
+    ex_x = set()
+    ex_y = set()
+
+    if bounds:
+        bx = bounds.get(v1, {})
+        min_x = max(0, bx.get("min", 0))
+        max_x = min(max_v1, bx.get("max", float('inf')))
+        ex_x = bx.get("exclude", set())
+
+        by = bounds.get(v2, {})
+        min_y = max(0, by.get("min", 0))
+        max_y = by.get("max", float('inf'))
+        ex_y = by.get("exclude", set())
+
+    for x in range(min_x, int(max_x) + 1):
+        if x in ex_x:
+            continue
+
         remaining = target - a * x
 
         if remaining % b == 0:
             y = remaining // b
-            if y >= 0:
+            if y >= min_y and y <= max_y and y not in ex_y:
                 append({v1: x, v2: y})
 
     return solutions
@@ -97,7 +124,7 @@ def _solve_two_var(coeffs, variables, target):
 # -------------------------------
 # Multi-variable (Backtracking optimized)
 # -------------------------------
-def _solve_multi_var(coeffs, variables, target):
+def _solve_multi_var(coeffs, variables, target, bounds):
     MAX_SOLUTIONS = 1000
     solutions = []
     append = solutions.append
@@ -113,9 +140,18 @@ def _solve_multi_var(coeffs, variables, target):
             var = variables[index]
             coeff = coeffs[var]
 
+            min_v = 0
+            max_v = float('inf')
+            ex_v = set()
+            if bounds:
+                bv = bounds.get(var, {})
+                min_v = max(0, bv.get("min", 0))
+                max_v = bv.get("max", float('inf'))
+                ex_v = bv.get("exclude", set())
+
             if remaining % coeff == 0:
                 val = remaining // coeff
-                if val >= 0:
+                if val >= min_v and val <= max_v and val not in ex_v:
                     current[var] = val
                     append(current.copy())
             return
@@ -126,7 +162,20 @@ def _solve_multi_var(coeffs, variables, target):
         # Max possible value for this variable
         max_val = remaining // coeff
 
-        for value in range(max_val + 1):
+        min_v = 0
+        max_v = max_val
+        ex_v = set()
+
+        if bounds:
+            bv = bounds.get(var, {})
+            min_v = max(0, bv.get("min", 0))
+            max_v = min(max_val, bv.get("max", float('inf')))
+            ex_v = bv.get("exclude", set())
+
+        for value in range(min_v, int(max_v) + 1):
+            if value in ex_v:
+                continue
+
             new_remaining = remaining - coeff * value
 
             # Early pruning
@@ -135,8 +184,6 @@ def _solve_multi_var(coeffs, variables, target):
 
             current[var] = value
             backtrack(index + 1, current, new_remaining)
-
-
 
     backtrack(0, {}, target)
     return solutions
