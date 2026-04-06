@@ -187,6 +187,8 @@ private:
     bool running_;
 
     void handle_client(SOCKET client_socket) {
+        std::cout << "New connection" << std::endl;
+        
         char buffer[65536];
         std::string request;
         int bytes_received = 0;
@@ -317,10 +319,14 @@ private:
 };
 
 int main(int argc, char* argv[]) {
+    char* port_env = std::getenv("PORT");
     int port = 8080;
-    if (argc > 1) {
+    if (port_env) {
+        port = std::stoi(port_env);
+    } else if (argc > 1) {
         port = std::stoi(argv[1]);
     }
+    std::cout << "Starting server on 0.0.0.0:" << port << std::endl;
 
     HTTPServer server(port);
     server.start();

@@ -15,7 +15,7 @@ function App() {
       return
     }
     try {
-      const response = await fetch('http://localhost:9000/solve', {
+      const response = await fetch('https://your-backend.onrender.com/solve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
