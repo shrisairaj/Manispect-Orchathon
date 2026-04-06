@@ -15,7 +15,8 @@ function App() {
       return
     }
     try {
-      const response = await fetch('https://your-backend.onrender.com/solve', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${apiUrl}/solve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -25,14 +26,14 @@ function App() {
           constraints,
           displayLimit: 10
         }),
-      })
-      const data = await response.json()
-      setResults(data)
+      });
+      const data = await response.json();
+      setResults(data);
     } catch (error) {
-      console.error('Error:', error)
-      setResults({ error: error.message })
+      console.error('Error:', error);
+      setResults({ error: error.message });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -46,3 +47,4 @@ function App() {
 }
 
 export default App
+

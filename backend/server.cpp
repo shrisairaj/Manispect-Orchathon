@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <thread>
+#include <cstdlib>
 #include "core/engine.h"
 
 #ifdef _WIN32
@@ -126,6 +127,13 @@ public:
     }
 };
 
+std::string addCORSHeaders(std::string response) {
+    response += "Access-Control-Allow-Origin: *\r\n";
+    response += "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n";
+    response += "Access-Control-Allow-Headers: Content-Type\r\n";
+    return response;
+}
+
 class HTTPServer {
 public:
     HTTPServer(int port = 8080) : port_(port), running_(false) {}
@@ -162,8 +170,7 @@ public:
 
         listen(listen_socket, 5);
         running_ = true;
-        std::cout << "QuantSolve C++ Backend Server\n";
-        std::cout << "Listening on port " << port_ << "\n";
+        std::cout << "QuantSolve C++ Backend Server listening on 0.0.0.0:" << port_ << "\n";
 
         while (running_) {
             sockaddr_in client_addr;
@@ -172,7 +179,7 @@ public:
 
             if (client_socket == INVALID_SOCKET) continue;
 
-            std::thread(&HTTPServer::handle_client, this, client_socket).detach();
+            std::thread(&HTTPServer::handle_client, this, client_socket, client_addr).detach();
         }
 
         close(listen_socket);
@@ -186,17 +193,21 @@ private:
     int port_;
     bool running_;
 
-    void handle_client(SOCKET client_socket) {
-        std::cout << "New connection" << std::endl;
-        
+    void handle_client(SOCKET client_socket, sockaddr_in client_addr) {
+        std::cout << "New connection from " << inet_ntoa(client_addr.sin_addr) << std::endl;
+
         char buffer[65536];
         std::string request;
-        int bytes_received = 0;
-        size_t content_length = 0;
+        int bytes_received;
+        ssize_t content_length = 0;
         bool headers_parsed = false;
 
-        while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0) {
-            request.append(buffer, bytes_received);
+        do {
+            bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+            if (bytes_received <= 0) break;
+            buffer[bytes_received] = '\0';
+            request += buffer;
+
             if (!headers_parsed) {
                 size_t header_end = request.find("\r\n\r\n");
                 if (header_end != std::string::npos) {
@@ -205,18 +216,12 @@ private:
                 }
             }
 
-            size_t header_end = request.find("\r\n\r\n");
-            if (header_end != std::string::npos) {
-                size_t body_length = request.size() - (header_end + 4);
-                if (body_length >= content_length) {
-                    break;
-                }
+            size_t body_start = request.find("\r\n\r\n");
+            if (body_start != std::string::npos) {
+                size_t body_length = request.length() - (body_start + 4);
+                if (body_length >= content_length) break;
             }
-
-            if (!headers_parsed && request.size() > 65536) {
-                break;
-            }
-        }
+        } while (bytes_received > 0 && request.length() < 1024*1024);
 
         if (request.empty()) {
             close(client_socket);
@@ -226,39 +231,40 @@ private:
         std::string method, path, http_version, body;
         parse_http_request(request, method, path, http_version, body);
 
-        std::string response;
+        std::cout << method << " " << path << std::endl;
 
-        if (method == "POST" && path == "/solve") {
-            response = handle_solve_request(body);
-        } else if (method == "OPTIONS") {
-            response = "HTTP/1.1 200 OK\r\n";
-            response += "Access-Control-Allow-Origin: *\r\n";
-            response += "Access-Control-Allow-Methods: POST, OPTIONS\r\n";
-            response += "Access-Control-Allow-Headers: Content-Type\r\n";
+        std::string response = "HTTP/1.1 404 Not Found\r\n";
+        response = addCORSHeaders(response);
+        response += "Content-Length: 0\r\n\r\n";
+
+        if (method == "OPTIONS") {
+            response = "HTTP/1.1 204 No Content\r\n";
+            response = addCORSHeaders(response);
             response += "Content-Length: 0\r\n\r\n";
-        } else {
-            response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n";
+        } else if (method == "POST" && path == "/solve") {
+            response = handle_solve_request(body);
+        } else if (method == "GET" && path == "/health") {
+            response = "HTTP/1.1 200 OK\r\n";
+            response = addCORSHeaders(response);
+            response += "Content-Type: text/plain\r\n";
+            response += "Content-Length: 2\r\n\r\nOK";
         }
 
         send(client_socket, response.c_str(), response.length(), 0);
         close(client_socket);
     }
 
-    int parse_content_length(const std::string& headers) {
+    ssize_t parse_content_length(const std::string& headers) {
         std::string search = "Content-Length:";
         size_t pos = headers.find(search);
-        if (pos == std::string::npos) {
-            return 0;
-        }
+        if (pos == std::string::npos) return 0;
         pos += search.length();
-        while (pos < headers.size() && (headers[pos] == ' ' || headers[pos] == '\t')) pos++;
+        while (pos < headers.length() && isspace(headers[pos])) pos++;
         size_t end = headers.find("\r\n", pos);
-        if (end == std::string::npos) {
-            end = headers.size();
-        }
+        if (end == std::string::npos) end = headers.length();
         std::string value = headers.substr(pos, end - pos);
         try {
-            return std::stoi(value);
+            return std::stoll(value);
         } catch (...) {
             return 0;
         }
@@ -287,7 +293,7 @@ private:
             json_response += "}";
 
             std::string response = "HTTP/1.1 200 OK\r\n";
-            response += "Access-Control-Allow-Origin: *\r\n";
+            response = addCORSHeaders(response);
             response += "Content-Type: application/json\r\n";
             response += "Content-Length: " + std::to_string(json_response.length()) + "\r\n\r\n";
             response += json_response;
@@ -300,7 +306,7 @@ private:
     std::string create_error_response(const std::string& error_msg) {
         std::string json = "{\"error\":\"" + SimpleJSONParser::escape(error_msg) + "\"}";
         std::string response = "HTTP/1.1 400 Bad Request\r\n";
-        response += "Access-Control-Allow-Origin: *\r\n";
+        response = addCORSHeaders(response);
         response += "Content-Type: application/json\r\n";
         response += "Content-Length: " + std::to_string(json.length()) + "\r\n\r\n";
         response += json;
@@ -326,10 +332,12 @@ int main(int argc, char* argv[]) {
     } else if (argc > 1) {
         port = std::stoi(argv[1]);
     }
-    std::cout << "Starting server on 0.0.0.0:" << port << std::endl;
+
+    std::cout << "Starting QuantSolve server on 0.0.0.0:" << port << std::endl;
 
     HTTPServer server(port);
     server.start();
 
     return 0;
 }
+
